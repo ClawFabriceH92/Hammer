@@ -16,7 +16,7 @@ class AutoStopWatcher(
     private var tripped = false
 
     fun record(success: Boolean) {
-        synchronized(lock) {
+        val shouldTrip = synchronized(lock) {
             if (tripped) return
 
             val now = clock()
@@ -25,15 +25,15 @@ class AutoStopWatcher(
                 samples.removeFirst()
             }
 
-            if (samples.size >= minSamples) {
-                val failures = samples.count { !it.success }
-                val failureRate = failures.toDouble() / samples.size
-                if (failureRate > failureThreshold) {
-                    tripped = true
-                    onTrip()
-                }
-            }
+            val trip = samples.size >= minSamples &&
+                samples.count { !it.success }.toDouble() / samples.size > failureThreshold
+            if (trip) tripped = true
+            trip
         }
+
+        // Invoke the callback outside the lock: onTrip stops the run (shutting down thread pools and
+        // notifying the ViewModel), and must not run while other worker threads are blocked in record().
+        if (shouldTrip) onTrip()
     }
 
     fun reset() = synchronized(lock) {

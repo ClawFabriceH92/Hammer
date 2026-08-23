@@ -10,6 +10,12 @@ import android.os.Binder
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.hammer.app.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Foreground service (§11/§12): keeps the run alive with the screen off/locked and exposes a
@@ -25,6 +31,8 @@ class HammerForegroundService : Service() {
     }
 
     private val binder = LocalBinder()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var collectorJob: Job? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): HammerForegroundService = this@HammerForegroundService
@@ -47,7 +55,27 @@ class HammerForegroundService : Service() {
 
         val targetLabel = intent?.getStringExtra(EXTRA_TARGET_LABEL).orEmpty()
         startForeground(NOTIFICATION_ID, buildNotification(targetLabel, currentRps = 0, elapsedSeconds = 0, totalDurationSeconds = 0))
+
+        // Keep the notification's live req/s and progress in sync with the run.
+        collectorJob?.cancel()
+        collectorJob = serviceScope.launch {
+            RunNotificationBus.state.collect { runState ->
+                if (runState != null) {
+                    updateNotification(
+                        runState.targetLabel,
+                        runState.currentRps,
+                        runState.elapsedSeconds,
+                        runState.totalDurationSeconds
+                    )
+                }
+            }
+        }
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
     fun updateNotification(targetLabel: String, currentRps: Long, elapsedSeconds: Int, totalDurationSeconds: Int) {
@@ -68,7 +96,7 @@ class HammerForegroundService : Service() {
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title, targetLabel, currentRps.toString()))
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .addAction(0, getString(R.string.notification_action_stop), stopPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -4,7 +4,9 @@ import com.hammer.app.core.AutoStopWatcher
 import com.hammer.app.core.ConcurrencyGuard
 import com.hammer.app.core.TokenBucketRateLimiter
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Drives one run end to end: paces requests according to [RunConfig.profile], enforces the
@@ -29,7 +31,12 @@ class RunEngine(
     private val workerPool = Executors.newCachedThreadPool()
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
 
-    @Volatile private var running = false
+    // stop() can be reached concurrently from three places — the auto-stop watcher (a worker
+    // thread), the duration check (the scheduler thread) and the user's STOP (the main thread).
+    // These flags make start()/stop() idempotent so onFinished fires exactly once.
+    private val started = AtomicBoolean(false)
+    private val stopped = AtomicBoolean(false)
+
     @Volatile private var startedAtMillis = 0L
 
     @Volatile private var burstCycleCount = 0
@@ -38,18 +45,20 @@ class RunEngine(
     @Volatile private var phaseStartedAtMillis = 0L
 
     fun start() {
-        if (running) return
-        running = true
+        if (!started.compareAndSet(false, true)) return
         startedAtMillis = System.currentTimeMillis()
         phaseStartedAtMillis = startedAtMillis
         scheduler.scheduleAtFixedRate({ safeTick() }, 0, TICK_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
     }
 
     fun stop(reason: FinishReason = FinishReason.USER_STOP) {
-        if (!running) return
-        running = false
+        if (!stopped.compareAndSet(false, true)) return
         scheduler.shutdown()
         workerPool.shutdown()
+        // Release the OkHttp dispatcher's thread pool and idle connections instead of leaking them
+        // across runs (a fresh client is built for every run).
+        httpClient?.dispatcher?.executorService?.shutdown()
+        httpClient?.connectionPool?.evictAll()
         onFinished(reason)
     }
 
@@ -63,7 +72,7 @@ class RunEngine(
     }
 
     private fun tick() {
-        if (!running) return
+        if (stopped.get()) return
         val now = System.currentTimeMillis()
         val elapsedMillis = now - startedAtMillis
         if (config.durationSeconds > 0 && elapsedMillis >= config.durationSeconds * 1000L) {
@@ -138,17 +147,23 @@ class RunEngine(
     }
 
     private fun launchOne() {
-        workerPool.submit {
-            try {
-                val outcome = when (config.protocol) {
-                    Protocol.TCP_RAW -> TcpRawEngine.execute(config)
-                    else -> HttpEngine.execute(httpClient!!, config)
+        try {
+            workerPool.submit {
+                try {
+                    val outcome = when (config.protocol) {
+                        Protocol.TCP_RAW -> TcpRawEngine.execute(config)
+                        else -> HttpEngine.execute(httpClient!!, config)
+                    }
+                    autoStopWatcher.record(outcome.success)
+                    onOutcome(outcome)
+                } finally {
+                    concurrencyGuard.release()
                 }
-                autoStopWatcher.record(outcome.success)
-                onOutcome(outcome)
-            } finally {
-                concurrencyGuard.release()
             }
+        } catch (_: RejectedExecutionException) {
+            // The pool was shut down between the caller acquiring a permit and this submit
+            // (a stop() raced with a tick). Give the permit back so the guard stays balanced.
+            concurrencyGuard.release()
         }
     }
 

@@ -15,6 +15,8 @@ import com.hammer.app.export.CsvExporter
 import com.hammer.app.export.HammerStorage
 import com.hammer.app.export.JsonExporter
 import com.hammer.app.service.HammerForegroundService
+import com.hammer.app.service.RunNotificationBus
+import com.hammer.app.service.RunNotificationState
 import com.hammer.app.service.StopRequestBus
 import com.hammer.app.stats.StatsCollector
 import com.hammer.app.stats.StatsSnapshot
@@ -61,7 +63,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateTargetKind(kind: TargetKind) = update { it.copy(targetKind = kind, validationError = null) }
+    fun updateTargetKind(kind: TargetKind) = update {
+        // Flip the conventional default port when the user hasn't overridden it: 443 for a TLS
+        // website, 80 for a plain-HTTP LAN device. A website on :80 with TLS would never connect.
+        val port = when {
+            kind == TargetKind.WEBSITE && it.port == "80" -> "443"
+            kind == TargetKind.LOCAL_IP && it.port == "443" -> "80"
+            else -> it.port
+        }
+        it.copy(targetKind = kind, port = port, validationError = null)
+    }
     fun updateIpInput(value: String) = update { it.copy(ipInput = value, validationError = null) }
     fun updateWebsiteInput(value: String) = update { it.copy(websiteInput = value, validationError = null) }
     fun updatePort(value: String) = update { it.copy(port = value.filter(Char::isDigit)) }
@@ -94,7 +105,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         val cooldownRemaining = cooldownRemainingSeconds()
         if (cooldownRemaining > 0) {
-            update { it.copy(runState = RunState.COOLDOWN, cooldownRemainingSeconds = cooldownRemaining) }
+            val message = getApplication<Application>().getString(R.string.error_cooldown, cooldownRemaining)
+            update { it.copy(cooldownRemainingSeconds = cooldownRemaining, validationError = message) }
             return
         }
 
@@ -116,6 +128,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stopRun() {
         runEngine?.stop(FinishReason.USER_STOP)
+    }
+
+    override fun onCleared() {
+        // Don't let a run keep its scheduler/thread pools/OkHttp client alive after the VM is gone.
+        runEngine?.stop(FinishReason.USER_STOP)
+        RunNotificationBus.clear()
+        super.onCleared()
     }
 
     fun exportCurrentRun() {
@@ -185,7 +204,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun resolveTarget(state: HammerUiState): TargetConfig? {
-        val port = state.port.toIntOrNull() ?: 80
+        val port = state.port.toIntOrNull() ?: if (state.targetKind == TargetKind.WEBSITE) 443 else 80
         return when (state.targetKind) {
             TargetKind.LOCAL_IP -> {
                 when (IpValidator.validate(state.ipInput)) {
@@ -223,6 +242,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val context = getApplication<Application>()
         val targetLabel = _uiState.value.targetLabel
+        RunNotificationBus.publish(
+            RunNotificationState(targetLabel, currentRps = 0, elapsedSeconds = 0, totalDurationSeconds = config.durationSeconds)
+        )
         context.startForegroundService(
             Intent(context, HammerForegroundService::class.java)
                 .putExtra(HammerForegroundService.EXTRA_TARGET_LABEL, targetLabel)
@@ -234,6 +256,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             while (isActive) {
                 val snapshot = collector.snapshot()
                 update { it.copy(stats = snapshot) }
+                RunNotificationBus.publish(
+                    RunNotificationState(
+                        targetLabel = targetLabel,
+                        currentRps = snapshot.currentRps,
+                        elapsedSeconds = snapshot.elapsedSeconds.toInt(),
+                        totalDurationSeconds = config.durationSeconds
+                    )
+                )
                 delay(STATS_POLL_INTERVAL_MS)
             }
         }
@@ -244,6 +274,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lastRunFinishedAtMillis = System.currentTimeMillis()
 
         val context = getApplication<Application>()
+        RunNotificationBus.clear()
         context.stopService(Intent(context, HammerForegroundService::class.java))
 
         val snapshot = statsCollector?.snapshot()
