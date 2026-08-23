@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hammer</string>
+
+    <string name="target_label">Target</string>
+    <string name="target_local_ip">Local IP</string>
+    <string name="target_website">Website</string>
+
+    <string name="protocol_label">Protocol</string>
+    <string name="protocol_http_get">HTTP GET</string>
+    <string name="protocol_http_post">HTTP POST</string>
+    <string name="protocol_tcp_raw">TCP raw</string>
+
+    <string name="profile_label">Profile</string>
+    <string name="profile_constant">Constant</string>
+    <string name="profile_ramp">Ramp</string>
+    <string name="profile_burst">Burst</string>
+    <string name="profile_max">Max</string>
+
+    <string name="settings_concurrency">Concurrency</string>
+    <string name="settings_duration">Duration</string>
+    <string name="settings_rate_limit">Rate limit (req/s)</string>
+    <string name="settings_timeout">Response timeout</string>
+    <string name="settings_ignore_tls_errors">Ignore certificate errors (LAN only)</string>
+
+    <string name="button_start">▶ START</string>
+    <string name="button_stop">⏹ STOP</string>
+    <string name="button_export">📋 Export</string>
+    <string name="button_settings">⚙ Settings</string>
+    <string name="button_history">📚 History</string>
+    <string name="button_friendly">Friendly mode</string>
+
+    <string name="stats_req_per_sec">Req/s</string>
+    <string name="stats_total_sent">Sent</string>
+    <string name="stats_total_ok">OK</string>
+    <string name="stats_total_failed">Failed</string>
+    <string name="stats_latency_p50">p50</string>
+    <string name="stats_latency_p95">p95</string>
+    <string name="stats_latency_p99">p99</string>
+
+    <string name="confirm_title">Confirm run</string>
+    <string name="confirm_target">Target: %1$s</string>
+    <string name="confirm_mode">Mode: %1$s</string>
+    <string name="confirm_rate">Rate: %1$s</string>
+    <string name="confirm_duration">Duration: %1$s</string>
+    <string name="confirm_go">GO</string>
+    <string name="confirm_cancel">Cancel</string>
+    <string name="confirm_unlock_website_rate">Unlock rate beyond %1$d req/s for this site</string>
+
+    <string name="error_ip_not_rfc1918">IP address rejected: only private RFC1918 (IPv4) ranges are allowed.</string>
+    <string name="error_ip_ipv6_unsupported">IPv6 not supported in v1 — use a private IPv4 address.</string>
+    <string name="error_auto_stop">Auto-stop: failure rate above 90% over 10 seconds.</string>
+    <string name="error_cooldown">Cooldown in progress, wait %1$d s before the next run.</string>
+
+    <string name="notification_channel_name">Hammer run in progress</string>
+    <string name="notification_title">Hammer — %1$s — %2$s req/s live</string>
+    <string name="notification_progress">%1$d/%2$d s</string>
+    <string name="notification_action_stop">STOP</string>
+
+    <string name="settings_screen_always_on">Keep screen on during run</string>
+</resources>

@@ -291,3 +291,54 @@ BLUETOOTH_CONNECT (v3, Nearby)
 - Visée d'infrastructures publiques tierces (le mode « site internet » est prévu pour ses **propres** serveurs)
 - Génération automatique de rapports PDF / HTML (v4 candidate)
 - Intégration CI / webhook de résultat (v4 candidate)
+
+---
+
+## 16. Addendum v1.1 — révisions issues de revue
+
+**Date :** 23/08/2026
+**Statut :** intégré au périmètre v1, à traiter avant/pendant l'implémentation
+
+### 16.1 Mode « site internet » — durcissement (bloquant avant build v1)
+
+Le champ « site internet » est en clair non protégé par la whitelist RFC1918 (§2), ce qui autorise de fait un flood contre un domaine dont l'utilisateur n'a pas nécessairement la propriété — en contradiction avec l'esprit « stress test de son propre serveur » affirmé en §1 et §15.
+
+- **Plafond par défaut bas** pour toute cible « site internet » non vérifiée : 10-20 req/s max, quel que soit le profil choisi.
+- **Déblocage explicite** au-delà de ce plafond (bouton dédié dans l'écran de confirmation, distinct du bouton GO).
+- **Piste v2** : preuve de possession du domaine (challenge DNS TXT ou fichier à la racine) pour lever totalement le plafond.
+- **Journalisation** : chaque run vers une cible « site internet » est horodaté et conservé dans le log local, indépendamment de la purge des rapports (cf. 16.5), pour traçabilité en cas de litige.
+
+### 16.2 TLS sur cibles LAN
+
+`HttpsURLConnection` avec le trust store standard rejettera la quasi-totalité des cibles LAN à certificat auto-signé (caméras, routeurs, box) — cassant le cas d'usage principal en HTTPS.
+
+- Ajouter une option **« Ignorer les erreurs de certificat »**, strictement réservée aux cibles validées RFC1918 (refusée en mode « site internet »).
+- Avertissement visible et persistant à l'écran tant que l'option est active.
+
+### 16.3 IPv6
+
+La whitelist RFC1918 (§2) ne couvre que l'IPv4. Le champ IP **refuse explicitement toute adresse IPv6** en v1 (pas de support ULA/link-local) — évite un trou de validation le temps que le sujet soit traité en v2.
+
+### 16.4 Cohérence des plafonds de concurrence
+
+- Le slider « Concurrents » (§5, 1 → 200) est un plafond **par run**, réglable par l'utilisateur.
+- Le hard cap de 500 (§6) est un plafond **global processus**, non modifiable sans debug flag, qui s'applique en plus du premier.
+- Le profil **Max** (§4, « pas de limite de rate ») reste soumis au hard cap de concurrence de 500 — l'absence de limite ne porte que sur le *rate*, jamais sur le nombre de connexions simultanées.
+
+### 16.5 Confidentialité et rétention
+
+- **Aucun SDK de télémétrie ou de crash reporting** (Firebase Crashlytics/Analytics ou équivalent) n'est intégré à l'application — engagement explicite, à vérifier dans les dépendances Gradle à chaque release.
+- **Purge automatique** des logs/rapports (`.csv` / `.json` / `.log`) au-delà des 10 derniers runs conservés (§7.2) — suppression des fichiers plus anciens à la fin de chaque run, sauf ceux explicitement exportés/partagés par l'utilisateur.
+
+### 16.6 Tests des garde-fous de sécurité
+
+Les mécanismes suivants sont considérés critiques et **doivent** être couverts par des tests unitaires dédiés (pas seulement vérifiés manuellement via les critères d'acceptation §14) :
+
+- Validateur d'IP RFC1918 (cas limites : bornes de plage, IPv4 mappé, IPv6, adresses publiques proches d'une plage privée).
+- Rate limiter / token-bucket (respect du plafond configuré, comportement en mode Max).
+- Hard cap global de concurrence (non-dépassement de 500, y compris en multi-cible futur).
+- Auto-stop sur taux d'échec (déclenchement correct au seuil de 90 % sur une fenêtre de 10 s, pas avant, pas après).
+
+### 16.7 Multi-langue (clarification)
+
+La ligne « multi-langue » de la roadmap v1 (tableau d'ouverture) désigne l'externalisation de toutes les chaînes UI dans `strings.xml` avec au minimum les locales **français** et **anglais** disponibles dès le v1. Pas d'exigence de langues supplémentaires en v1.
