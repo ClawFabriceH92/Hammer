@@ -28,16 +28,9 @@ jobs:
         run: ./gradlew testDebugUnitTest --stacktrace
         continue-on-error: true
 
-      - name: DIAGNOSTIC dump of the merged values.xml AGP tries to compile
+      - name: DIAGNOSTIC bisect the merged values.xml to find the crashing resource
         if: always()
-        run: |
-          F=app/build/intermediates/incremental/debug/mergeDebugResources/merged.dir/values/values.xml
-          if [ -f "$F" ]; then
-            echo "--- $F ---"
-            cat -A "$F" | head -c 20000
-          else
-            echo "$F not found (mergeDebugResources may not have run for this task)"
-          fi
+        run: python3 scripts/diagnose_resource_crash.py
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
