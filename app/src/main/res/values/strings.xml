@@ -51,7 +51,7 @@
 
     <string name="error_ip_not_rfc1918">Adresse IP refusée : seules les plages privées RFC1918 (IPv4) sont autorisées.</string>
     <string name="error_ip_ipv6_unsupported">IPv6 non pris en charge en v1 — utilisez une adresse IPv4 privée.</string>
-    <string name="error_auto_stop">Arrêt automatique : taux d'échec supérieur à 90% sur 10 secondes.</string>
+    <string name="error_auto_stop">Arrêt automatique : taux d\'échec supérieur à 90% sur 10 secondes.</string>
     <string name="error_cooldown">Cooldown en cours, patientez %1$d s avant le prochain run.</string>
 
     <string name="notification_channel_name">Run Hammer en cours</string>

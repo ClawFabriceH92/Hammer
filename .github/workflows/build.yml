@@ -26,11 +26,6 @@ jobs:
 
       - name: Run unit tests (garde-fous, rate limiter, etc.)
         run: ./gradlew testDebugUnitTest --stacktrace
-        continue-on-error: true
-
-      - name: DIAGNOSTIC bisect the merged values.xml to find the crashing resource
-        if: always()
-        run: python3 scripts/diagnose_resource_crash.py
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
