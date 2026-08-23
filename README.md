@@ -18,12 +18,16 @@ Pas encore implémenté : v2 (multi-cible, UDP/WebSocket/DNS, planification, wat
 
 ## Build
 
-Projet Gradle standard (AGP 8.5.2, Kotlin 1.9.24, Compose). Le JAR du Gradle Wrapper n'est pas versionné dans ce dépôt (binaire non généré depuis cette session) : ouvrez le projet dans Android Studio (qui régénère le wrapper automatiquement), ou lancez `gradle wrapper` localement avec une installation Gradle existante avant d'utiliser `./gradlew`.
+Projet Gradle standard (AGP 8.5.2, Kotlin 1.9.24, Compose).
 
 ```bash
 ./gradlew testDebugUnitTest   # tests unitaires (garde-fous, rate limiter, etc.)
 ./gradlew assembleDebug       # build de l'APK debug
 ```
+
+## CI
+
+Le workflow [`build.yml`](.github/workflows/build.yml) build l'APK debug et fait tourner les tests unitaires à chaque push sur `main` (et sur demande via `workflow_dispatch`). L'APK généré est publié comme artefact du run (`hammer-debug-apk`), téléchargeable depuis l'onglet **Actions** du dépôt.
 
 ## Sécurité
 
