@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,3 +38,23 @@ jobs:
           name: hammer-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # Actions artifacts are served from Azure Blob Storage, which some network policies
+      # block. Also publish the APK on a dedicated branch so it can be pulled with a plain
+      # `git fetch` (over the same host already used to push this repo) instead.
+      - name: Publish APK to apk-latest branch
+        if: github.event_name == 'push'
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
+          rm -rf /tmp/apk-branch
+          mkdir -p /tmp/apk-branch
+          cp "$APK" /tmp/apk-branch/hammer-debug.apk
+          cd /tmp/apk-branch
+          git init -q
+          git config user.email "ci@hammer.local"
+          git config user.name "Hammer CI"
+          git checkout -q -b apk-latest
+          git add hammer-debug.apk
+          git commit -q -m "APK from run ${{ github.run_id }} (${{ github.sha }})"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin apk-latest
