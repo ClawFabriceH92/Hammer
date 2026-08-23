@@ -153,7 +153,14 @@ fun HammerScreen(state: HammerUiState, viewModel: MainViewModel) {
                     onClick = { if (state.runState == RunState.RUNNING) viewModel.stopRun() else viewModel.requestStart() },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (state.runState == RunState.RUNNING) stringResource(R.string.button_stop) else stringResource(R.string.button_start))
+                    // Emoji prefixed here rather than in strings.xml: astral-plane emoji crash aapt2 (see strings.xml).
+                    Text(
+                        if (state.runState == RunState.RUNNING) {
+                            "⏹ ${stringResource(R.string.button_stop)}"
+                        } else {
+                            "▶ ${stringResource(R.string.button_start)}"
+                        }
+                    )
                 }
                 OutlinedButton(onClick = viewModel::applyFriendlyMode) {
                     Text(stringResource(R.string.button_friendly))
@@ -165,12 +172,12 @@ fun HammerScreen(state: HammerUiState, viewModel: MainViewModel) {
                     onClick = viewModel::exportCurrentRun,
                     enabled = state.stats != null,
                     modifier = Modifier.weight(1f)
-                ) { Text(stringResource(R.string.button_export)) }
+                ) { Text("📋 ${stringResource(R.string.button_export)}") }
                 OutlinedButton(onClick = { viewModel.toggleSettings(true) }, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.button_settings))
+                    Text("⚙ ${stringResource(R.string.button_settings)}")
                 }
                 OutlinedButton(onClick = { viewModel.toggleHistory(true) }, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.button_history))
+                    Text("📚 ${stringResource(R.string.button_history)}")
                 }
             }
         }

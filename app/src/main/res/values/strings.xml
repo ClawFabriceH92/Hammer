@@ -23,11 +23,13 @@
     <string name="settings_timeout">Timeout réponse</string>
     <string name="settings_ignore_tls_errors">Ignorer les erreurs de certificat (LAN uniquement)</string>
 
-    <string name="button_start">▶ START</string>
-    <string name="button_stop">⏹ STOP</string>
-    <string name="button_export">📋 Export</string>
-    <string name="button_settings">⚙ Réglages</string>
-    <string name="button_history">📚 Historique</string>
+    <!-- No emoji here: astral-plane emoji (outside the BMP) crash AGP's aaptcompiler
+         ("Can not extract resource from ParsedResource"); emoji are prefixed in Kotlin instead. -->
+    <string name="button_start">START</string>
+    <string name="button_stop">STOP</string>
+    <string name="button_export">Export</string>
+    <string name="button_settings">Réglages</string>
+    <string name="button_history">Historique</string>
     <string name="button_friendly">Mode friendly</string>
 
     <string name="stats_req_per_sec">Req/s</string>
