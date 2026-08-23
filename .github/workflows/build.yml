@@ -24,11 +24,16 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      # --max-workers=1: the merged values.xml compile crashes intermittently in
+      # com.android.aaptcompiler.TableExtractor with "Can not extract resource from
+      # ParsedResource@<random-hash>" — a different resource each time, which points to a
+      # race in AGP's in-process (non-isolated) resource-compiler workers rather than a
+      # specific bad resource declaration. Serializing Gradle's workers avoids the race.
       - name: Run unit tests (garde-fous, rate limiter, etc.)
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest --max-workers=1 --stacktrace
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --max-workers=1 --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
