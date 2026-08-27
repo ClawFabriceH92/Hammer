@@ -3,13 +3,39 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#22C55E"
-        android:pathData="M34,60 L58,36 L66,44 L42,68 Z" />
-    <path
-        android:fillColor="#E5E7EB"
-        android:pathData="M60,30 L78,30 L78,48 L70,48 L70,40 L62,40 Z" />
-    <path
-        android:fillColor="#111827"
-        android:pathData="M28,66 L38,76 L32,82 L22,72 Z" />
+
+    <!-- Whole hammer tilted for a mid-swing look; head points down as if striking. -->
+    <group
+        android:name="hammer"
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="16">
+
+        <!-- Handle -->
+        <path
+            android:fillColor="#F3F4F6"
+            android:pathData="M49,22 L59,22 L59,64 a5,5 0 0 1 -10,0 Z" />
+
+        <!-- Head (striking block), rounded striking face at the bottom -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M33,58 L75,58 L75,74 a6,6 0 0 1 -6,6 L39,80 a6,6 0 0 1 -6,-6 Z" />
+
+        <!-- Impact sparks radiating from the striking face -->
+        <path
+            android:strokeColor="#22C55E"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M54,85 L54,95" />
+        <path
+            android:strokeColor="#22C55E"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M45,84 L40,93" />
+        <path
+            android:strokeColor="#22C55E"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M63,84 L68,93" />
+    </group>
 </vector>

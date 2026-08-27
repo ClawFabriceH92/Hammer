@@ -4,15 +4,17 @@
     android:viewportWidth="24"
     android:viewportHeight="24"
     android:tint="#FFFFFF">
-    <!-- Monochrome hammer silhouette. Notification small icons must be white-on-transparent;
-         a full-color launcher icon would render as a flat white square. -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M6,14.5 L12.5,8 L14.5,10 L8,16.5 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M13,5 L19,5 L19,11 L16.5,11 L16.5,7.5 L13,7.5 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M4.5,16 L8,19.5 L6,21.5 L2.5,18 Z" />
+    <!-- Monochrome mallet matching the launcher icon. Notification small icons must be a white
+         silhouette on transparent; the system tints them. -->
+    <group
+        android:pivotX="12"
+        android:pivotY="12"
+        android:rotation="16">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M10.9,4.5 L13.1,4.5 L13.1,13.5 a1.1,1.1 0 0 1 -2.2,0 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M6.8,12.6 L17.2,12.6 L17.2,16.2 a1.4,1.4 0 0 1 -1.4,1.4 L8.2,18 a1.4,1.4 0 0 1 -1.4,-1.4 Z" />
+    </group>
 </vector>
