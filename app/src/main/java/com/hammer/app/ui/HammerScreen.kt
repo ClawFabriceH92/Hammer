@@ -224,7 +224,9 @@ private fun androidx.compose.material3.SingleChoiceSegmentedButtonRowScope.Segme
                 text = label,
                 maxLines = 1,
                 softWrap = false,
-                style = MaterialTheme.typography.labelMedium
+                // labelSmall (11sp) guarantees the longest 4-segment label ("Constante") fits
+                // without wrapping or ellipsis on a narrow phone.
+                style = MaterialTheme.typography.labelSmall
             )
         }
     )
@@ -242,7 +244,7 @@ private fun ActionButton(label: String, modifier: Modifier, enabled: Boolean = t
             text = label,
             maxLines = 1,
             softWrap = false,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelMedium
         )
     }
 }
